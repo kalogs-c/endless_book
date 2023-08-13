@@ -3,6 +3,7 @@ package entities
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/gorilla/websocket"
@@ -35,6 +36,7 @@ func (u *User) Receive(ctx *actor.Context) {
 		log.Printf("%s sending %v\n", u.Name, msg)
 		u.send(&msg)
 	case actor.Stopped:
+		_ = msg
 		err := u.conn.Close()
 		if err != nil {
 			log.Printf("Error closing connection: %v\n", err)
@@ -52,6 +54,9 @@ func (u *User) listen() {
 			fmt.Printf("Error reading message: %v\n", err)
 			return
 		}
+
+		word.Owner = u.Name
+		word.CreatedAt = time.Now()
 
 		if word.Type != "" {
 			go u.handleWord(word)

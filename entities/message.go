@@ -1,6 +1,9 @@
 package entities
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 type MessageType string
 
@@ -10,16 +13,18 @@ const (
 )
 
 type Message struct {
-	Type    MessageType `json:"type"`
-	Content string      `json:"content"`
-	Owner   string      `json:"owner"`
+	Type      MessageType `json:"type"`
+	Content   string      `json:"content"    bson:"content"`
+	Owner     string      `json:"owner"      bson:"owner"`
+	CreatedAt time.Time   `json:"created_at" bson:"created_at"`
 }
 
 func NewWord(content string, owner string) *Message {
 	return &Message{
-		Type:    Word,
-		Content: content,
-		Owner:   owner,
+		Type:      Word,
+		Content:   content,
+		Owner:     owner,
+		CreatedAt: time.Now(),
 	}
 }
 
@@ -33,9 +38,10 @@ func (m *Message) ValidateWord() string {
 
 func NewNotification(content string, owner string) *Message {
 	return &Message{
-		Type:    Notification,
-		Content: content,
-		Owner:   owner,
+		Type:      Notification,
+		Content:   content,
+		Owner:     owner,
+		CreatedAt: time.Now(),
 	}
 }
 
