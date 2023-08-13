@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title></title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="css/style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <h1>Endless book</h1>
+    <input type="" name="" value="" id="name" />
+    <button id="connect">Connect</button>
+    <input type="name" name="input" id="input" />
+    <button id="send">Send</button>
+
+    <p id="output"></p>
+  </body>
+
+  <script>
+    let ws;
+
+    const button = document.getElementById("send");
+    const input = document.getElementById("input");
+    const connect = document.getElementById("connect");
+    const name = document.getElementById("name");
+
+    connect.onclick = () => {
+      ws = new WebSocket("ws://localhost:8080/ws?username=" + name.value);
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        const words = [];
+
+        if (Array.isArray(message)) {
+          message.forEach((word) => {
+            words.push(word.content);
+          });
+        } else {
+          words.push(message.content);
+        }
+
+        const output = document.getElementById("output");
+
+        words.forEach((word) => {
+          output.innerHTML += word + " ";
+        });
+      };
+    };
+
+    button.onclick = () => {
+      const message = {
+        content: input.value,
+        type: "word",
+      };
+
+      ws.send(JSON.stringify(message));
+    };
+  </script>
+</html>

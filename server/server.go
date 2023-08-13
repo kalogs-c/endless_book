@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"text/template"
 	"time"
 
 	"github.com/anthdm/hollywood/actor"
@@ -48,7 +49,7 @@ func (s *Server) Receive(ctx *actor.Context) {
 	case entities.Message:
 		fmt.Println("Server received message")
 		s.saveMessage(msg)
-		s.broadcast(ctx.Sender(), msg)
+		s.broadcast(msg)
 	default:
 		fmt.Printf("Server received %v\n", msg)
 	}
@@ -56,9 +57,16 @@ func (s *Server) Receive(ctx *actor.Context) {
 
 func (s *Server) serve() {
 	go func() {
+		http.HandleFunc("/", s.handleIndex)
 		http.HandleFunc("/ws", s.handleWebsocket)
 		http.ListenAndServe(":8080", nil)
 	}()
+}
+
+func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("templates/index.html"))
+
+	tmpl.Execute(w, nil)
 }
 
 func (s *Server) handleWebsocket(w http.ResponseWriter, r *http.Request) {
@@ -80,12 +88,10 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, r *http.Request) {
 	s.sessions[pid.GetID()] = pid
 }
 
-func (s *Server) broadcast(sender *actor.PID, msg entities.Message) {
+func (s *Server) broadcast(msg entities.Message) {
 	for _, pid := range s.sessions {
-		if !pid.Equals(sender) {
-			log.Printf("Sending %v to %v\n", msg, pid)
-			s.ctx.Send(pid, msg)
-		}
+		log.Printf("Sending %v to %v\n", msg, pid)
+		s.ctx.Send(pid, msg)
 	}
 }
 

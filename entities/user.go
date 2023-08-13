@@ -58,6 +58,10 @@ func (u *User) listen() {
 		word.Owner = u.Name
 		word.CreatedAt = time.Now()
 
+		if word.Content == "" {
+			u.send(NewNotification("Json message is invalid, must have a content field", "Server"))
+		}
+
 		if word.Type != "" {
 			go u.handleWord(word)
 		} else {
