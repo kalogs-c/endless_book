@@ -1,0 +1,13 @@
+<div
+  hx-ext="ws"
+  ws-connect="/ws?username={{ .Username }}"
+  target="#ws"
+  class="w-full h-screen flex flex-col justify-center items-center"
+>
+  <div id="messages" class="flex flex-row gap-1 mb-2"></div>
+  <form id="form" class="join fixed bottom-5 w-full m-2" ws-send>
+    <input type="text" name="type" value="word" hidden />
+    <input type="text" name="content" class="input join-item w-full" />
+    <button type="submit" class="btn btn-primary join-item">Send</button>
+  </form>
+</div>

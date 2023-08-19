@@ -1,4 +1,4 @@
-package entities
+package actors
 
 import (
 	"fmt"
@@ -7,6 +7,8 @@ import (
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/gorilla/websocket"
+
+	"github.com/kalogs-c/endless_book/types"
 )
 
 type User struct {
@@ -32,7 +34,7 @@ func (u *User) Receive(ctx *actor.Context) {
 		u.ctx = ctx
 		go u.listen()
 		fmt.Printf("%s started\n", u.Name)
-	case Message:
+	case types.Message:
 		log.Printf("%s sending %v\n", u.Name, msg)
 		u.send(&msg)
 	case actor.Stopped:
@@ -48,7 +50,7 @@ func (u *User) Receive(ctx *actor.Context) {
 }
 
 func (u *User) listen() {
-	var word Message
+	var word types.Message
 	for {
 		if err := u.conn.ReadJSON(&word); err != nil {
 			fmt.Printf("Error reading message: %v\n", err)
@@ -59,20 +61,25 @@ func (u *User) listen() {
 		word.CreatedAt = time.Now()
 
 		if word.Content == "" {
-			u.send(NewNotification("Json message is invalid, must have a content field", "Server"))
+			u.send(
+				types.NewNotification(
+					"Json message is invalid, must have a content field",
+					"Server",
+				),
+			)
 		}
 
 		if word.Type != "" {
 			go u.handleWord(word)
 		} else {
-			u.send(NewNotification("Json message is invalid, must have a type field", "Server"))
+			u.send(types.NewNotification("Json message is invalid, must have a type field", "Server"))
 		}
 	}
 }
 
-func (u *User) handleWord(msg Message) {
+func (u *User) handleWord(msg types.Message) {
 	if msg := msg.ValidateWord(); msg != "" {
-		u.send(NewNotification(msg, "Server"))
+		u.send(types.NewNotification(msg, "Server"))
 		return
 	}
 
@@ -84,10 +91,16 @@ func (u *User) handleWord(msg Message) {
 	u.ctx.Send(u.serverPid, msg)
 }
 
-func (u *User) send(msg *Message) {
-	fmt.Printf("sending json message: %v\n", msg)
-	if err := u.conn.WriteJSON(msg); err != nil {
-		fmt.Printf("Error writing message: %v\n", err)
-		return
+func (u *User) send(msg *types.Message) {
+	tmpl := fmt.Sprintf(`
+    <div id="messages" hx-swap-oob="beforeend" class="message">
+      <span hidden>%s</span>
+      <div>%s</div>
+    </div>
+  `, msg.Owner, msg.Content)
+	fmt.Printf("sending html message: %v\n", tmpl)
+
+	if err := u.conn.WriteMessage(websocket.TextMessage, []byte(tmpl)); err != nil {
+		log.Printf("Error sending message: %v\n", err)
 	}
 }

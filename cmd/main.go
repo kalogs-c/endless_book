@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/anthdm/hollywood/actor"
+	hollywood "github.com/anthdm/hollywood/actor"
 
-	"github.com/kalogs-c/endless_book/server"
+	"github.com/kalogs-c/endless_book/actors"
 )
 
 func main() {
-	engine := actor.NewEngine()
-	engine.Spawn(server.NewServer, "server")
+	engine := hollywood.NewEngine()
+	engine.Spawn(actors.NewServer, "server")
 
 	select {}
 }

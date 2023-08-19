@@ -1,4 +1,4 @@
-package server
+package actors
 
 import (
 	"context"
@@ -13,14 +13,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/kalogs-c/endless_book/connections"
-	"github.com/kalogs-c/endless_book/entities"
+	"github.com/kalogs-c/endless_book/types"
 )
 
 type Server struct {
 	ctx            *actor.Context
 	db             *mongo.Client
 	sessions       map[string]*actor.PID
-	messagesBuffer []*entities.Message
+	messagesBuffer []*types.Message
 }
 
 func NewServer() actor.Receiver {
@@ -34,7 +34,7 @@ func NewServer() actor.Receiver {
 
 	return &Server{
 		sessions:       make(map[string]*actor.PID),
-		messagesBuffer: []*entities.Message{},
+		messagesBuffer: []*types.Message{},
 		db:             client,
 	}
 }
@@ -46,7 +46,7 @@ func (s *Server) Receive(ctx *actor.Context) {
 		s.serve()
 		s.ctx = ctx
 		_ = msg
-	case entities.Message:
+	case types.Message:
 		fmt.Println("Server received message")
 		s.saveMessage(msg)
 		s.broadcast(msg)
@@ -59,6 +59,7 @@ func (s *Server) serve() {
 	go func() {
 		http.HandleFunc("/", s.handleIndex)
 		http.HandleFunc("/ws", s.handleWebsocket)
+		http.HandleFunc("/connect", s.handleNewConnection)
 		http.ListenAndServe(":8080", nil)
 	}()
 }
@@ -79,23 +80,48 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	username := r.URL.Query().Get("username")
-	pid := s.ctx.SpawnChild(entities.NewUser(username, conn, s.ctx.PID()), username)
+	pid := s.ctx.SpawnChild(NewUser(username, conn, s.ctx.PID()), username)
 
 	if len(s.messagesBuffer) > 0 {
-		conn.WriteJSON(s.messagesBuffer)
+		// conn.WriteJSON(s.messagesBuffer)
+	} else {
+		cursor, err := s.db.Database("endless_book").Collection("messages").Find(context.Background(), nil)
+		if err == nil {
+			for cursor.Next(context.Background()) {
+				var msg types.Message
+				err := cursor.Decode(&msg)
+				if err != nil {
+					log.Fatal(err)
+				}
+				s.broadcast(msg)
+			}
+		}
 	}
 
+	fmt.Printf("Sessions: %+v\n", s.sessions)
+
+	// s.broadcast(*types.NewNotification(fmt.Sprintf("%s joined the chat", username), "Server"))
 	s.sessions[pid.GetID()] = pid
 }
 
-func (s *Server) broadcast(msg entities.Message) {
+func (s *Server) handleNewConnection(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	username := r.Form.Get("username")
+	log.Printf("New connection: %s\n", username)
+
+	tmpl := template.Must(template.ParseFiles("templates/components/connection_form.html"))
+
+	tmpl.ExecuteTemplate(w, "connection_form.html", struct{ Username string }{username})
+}
+
+func (s *Server) broadcast(msg types.Message) {
 	for _, pid := range s.sessions {
 		log.Printf("Sending %v to %v\n", msg, pid)
 		s.ctx.Send(pid, msg)
 	}
 }
 
-func (s *Server) saveMessage(msg entities.Message) {
+func (s *Server) saveMessage(msg types.Message) {
 	fmt.Printf("Saving message, BUF size: %d\n", len(s.messagesBuffer))
 	s.messagesBuffer = append(s.messagesBuffer, &msg)
 
@@ -112,7 +138,7 @@ func (s *Server) saveMessage(msg entities.Message) {
 		if err != nil {
 			log.Fatal(err)
 		} else {
-			s.messagesBuffer = []*entities.Message{}
+			s.messagesBuffer = []*types.Message{}
 		}
 	}
 }

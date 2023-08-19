@@ -4,56 +4,35 @@
     <title></title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link href="css/style.css" rel="stylesheet" />
+    <script src="https://unpkg.com/htmx.org@1.9.4"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@3.5.1/dist/full.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
-    <h1>Endless book</h1>
-    <input type="" name="" value="" id="name" />
-    <button id="connect">Connect</button>
-    <input type="name" name="input" id="input" />
-    <button id="send">Send</button>
-
-    <p id="output"></p>
+    <div class="navbar bg-gray-900">
+      <div class="navbar-center">
+        <h1 class="text-xl">Endless Book</h1>
+      </div>
+    </div>
+    <div
+      id="ws"
+      class="bg-gray-900 flex flex-col justify-center items-center h-screen"
+      hx-swap="innerHTML"
+    >
+      <form hx-target="#ws" hx-post="/connect" class="join">
+        <input
+          class="input join-item w-full max-w-xs"
+          type="text"
+          name="username"
+          placeholder="username"
+        />
+        <button class="btn btn-primary join-item" type="submit">connect</button>
+      </form>
+    </div>
   </body>
-
-  <script>
-    let ws;
-
-    const button = document.getElementById("send");
-    const input = document.getElementById("input");
-    const connect = document.getElementById("connect");
-    const name = document.getElementById("name");
-
-    connect.onclick = () => {
-      ws = new WebSocket("ws://localhost:8080/ws?username=" + name.value);
-
-      ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        const words = [];
-
-        if (Array.isArray(message)) {
-          message.forEach((word) => {
-            words.push(word.content);
-          });
-        } else {
-          words.push(message.content);
-        }
-
-        const output = document.getElementById("output");
-
-        words.forEach((word) => {
-          output.innerHTML += word + " ";
-        });
-      };
-    };
-
-    button.onclick = () => {
-      const message = {
-        content: input.value,
-        type: "word",
-      };
-
-      ws.send(JSON.stringify(message));
-    };
-  </script>
 </html>
