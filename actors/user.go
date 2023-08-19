@@ -105,18 +105,17 @@ func (u *User) send(msg *types.Message) {
 
 	if msg.Type == types.Word {
 		tmpl = fmt.Sprintf(`
-    <div id="messages" hx-swap-oob="beforeend" class="message">
-      <span hidden>%s</span>
-      <div>%s</div>
-    </div>
-  `, msg.Owner, msg.Content)
+      <div id="messages" hx-swap-oob="beforeend" class="message">
+        <span hidden>%s</span>
+        <div>%s</div>
+      </div>
+    `, msg.Owner, msg.Content)
 	} else if msg.Type == types.Notification {
 		tmpl = fmt.Sprintf(`
-    <div id="notifications" hx-swap-oob="beforeend" class="notification">
-      <span hidden>%s</span>
-      <div>%s</div>
-    </div>
-  `, msg.Owner, msg.Content)
+        <li id="notifications" hx-swap-oob="afterbegin" class="alert">
+          <span class="bg-blue-100 rounded-lg py-5 px-6 mb-3 text-base text-blue-700 inline-flex items-center w-full" role="alert">%s</span>
+        </li>
+    `, msg.Content)
 	}
 	fmt.Printf("sending html message: %v\n", tmpl)
 
