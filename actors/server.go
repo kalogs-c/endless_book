@@ -107,6 +107,9 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleNewConnection(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	username := r.Form.Get("username")
+
+	// Validate username len
+
 	log.Printf("New connection: %s\n", username)
 
 	tmpl := template.Must(template.ParseFiles("templates/components/connection_form.html"))
