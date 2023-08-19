@@ -100,7 +100,7 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Sessions: %+v\n", s.sessions)
 
-	// s.broadcast(*types.NewNotification(fmt.Sprintf("%s joined the chat", username), "Server"))
+	s.broadcast(*types.NewNotification(fmt.Sprintf("%s joined the chat", username), "Server"))
 	s.sessions[pid.GetID()] = pid
 }
 

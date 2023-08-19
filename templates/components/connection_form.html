@@ -2,12 +2,29 @@
   hx-ext="ws"
   ws-connect="/ws?username={{ .Username }}"
   target="#ws"
-  class="w-full h-screen flex flex-col justify-center items-center"
+  class="w-full h-screen flex justify-center"
 >
-  <div id="messages" class="flex flex-row gap-1 mb-2"></div>
-  <form id="form" class="join fixed bottom-5 w-full m-2" ws-send>
-    <input type="text" name="type" value="word" hidden />
+  <div
+    id="messages"
+    class="flex flex-row gap-1 m-10 self-start w-full flex-wrap"
+  ></div>
+  <form
+    id="form"
+    class="join fixed bottom-5 w-10/12 m-auto"
+    ws-send
+    hx-reset-on-success
+  >
     <input type="text" name="content" class="input join-item w-full" />
     <button type="submit" class="btn btn-primary join-item">Send</button>
+    <input type="text" name="type" value="word" hidden />
   </form>
 </div>
+
+<script>
+  const form = document.querySelector("#form");
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    form.reset();
+  });
+</script>

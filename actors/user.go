@@ -69,6 +69,15 @@ func (u *User) listen() {
 			)
 		}
 
+		if len(word.Content) > 100 {
+			u.send(
+				types.NewNotification(
+					"Json message is invalid, must be less than 100 characters",
+					"Server",
+				),
+			)
+		}
+
 		if word.Type != "" {
 			go u.handleWord(word)
 		} else {
@@ -92,12 +101,23 @@ func (u *User) handleWord(msg types.Message) {
 }
 
 func (u *User) send(msg *types.Message) {
-	tmpl := fmt.Sprintf(`
+	var tmpl string
+
+	if msg.Type == types.Word {
+		tmpl = fmt.Sprintf(`
     <div id="messages" hx-swap-oob="beforeend" class="message">
       <span hidden>%s</span>
       <div>%s</div>
     </div>
   `, msg.Owner, msg.Content)
+	} else if msg.Type == types.Notification {
+		tmpl = fmt.Sprintf(`
+    <div id="notifications" hx-swap-oob="beforeend" class="notification">
+      <span hidden>%s</span>
+      <div>%s</div>
+    </div>
+  `, msg.Owner, msg.Content)
+	}
 	fmt.Printf("sending html message: %v\n", tmpl)
 
 	if err := u.conn.WriteMessage(websocket.TextMessage, []byte(tmpl)); err != nil {
